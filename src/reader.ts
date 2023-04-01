@@ -3,10 +3,12 @@ import fs from "fs/promises";
 
 export interface Reader {
   isBigEndian: boolean;
-  canRead(maxOffset?: number): Promise<boolean>;
+  canRead(): Promise<boolean>;
   getOffset(): number;
+  getSubreader(length: number): Reader;
   incrementOffset(increment: number): void;
-  readString(length: number): Promise<string>;
+  readAsciiString(length: number): Promise<string>;
+  readUtf8String(length: number): Promise<string>;
   readBuffer(length: number): Promise<Buffer>;
   read1(): Promise<number>;
   read2(): Promise<number>;
@@ -17,7 +19,25 @@ export interface Reader {
 export class BufferReader implements Reader {
   public isBigEndian = true;
 
-  constructor(private readonly buffer: Buffer, private offset = 0) {}
+  constructor(
+    private readonly buffer: Buffer,
+    private offset = 0,
+    private maxOffset?: number
+  ) {}
+
+  getSubreader(length: number): Reader {
+    return new BufferReader(this.buffer, this.offset, this.offset + length);
+  }
+
+  async readUtf8String(length: number): Promise<string> {
+    const result = this.buffer.toString(
+      "utf-8",
+      this.offset,
+      this.offset + length
+    );
+    this.offset += length;
+    return result;
+  }
 
   async readBuffer(length: number): Promise<Buffer> {
     return this.buffer.subarray(this.offset, this.offset + length);
@@ -31,45 +51,48 @@ export class BufferReader implements Reader {
     this.offset += increment;
   }
 
-  async canRead(maxOffset?: number) {
-    return this.offset < (maxOffset || this.buffer.length);
+  async canRead() {
+    return this.offset < (this.maxOffset || this.buffer.length);
   }
 
-  async readString(length: number, offset = 0) {
-    this.read(length);
-    return this.buffer.toString("ascii", offset, offset + length);
+  async readAsciiString(length: number) {
+    const result = this.buffer.toString(
+      "ascii",
+      this.offset,
+      this.offset + length
+    );
+    this.offset += length;
+    return result;
   }
 
   async read1() {
-    this.read(1);
-    return this.buffer.readUInt8();
+    const result = this.buffer.readUInt8();
+    this.offset += 1;
+    return result;
   }
 
   async read2() {
-    this.read(2);
-    return this.isBigEndian
+    const result = this.isBigEndian
       ? this.buffer.readUInt16BE()
       : this.buffer.readUInt16LE();
+    this.offset += 2;
+    return result;
   }
 
   async read4() {
-    this.read(4);
-    return this.isBigEndian
+    const result = this.isBigEndian
       ? this.buffer.readUInt32BE()
       : this.buffer.readUInt32LE();
+    this.offset += 4;
+    return result;
   }
 
   async read8() {
-    this.read(8);
-    return this.isBigEndian
+    const result = this.isBigEndian
       ? this.buffer.readBigUInt64BE()
       : this.buffer.readBigUInt64LE();
-  }
-
-  private read(bytes: number, offset?: number) {
-    if (offset === undefined) {
-      this.offset += bytes;
-    }
+    this.offset += 8;
+    return result;
   }
 }
 
@@ -77,10 +100,17 @@ export class FileReader implements Reader {
   public isBigEndian = true;
 
   private buffer: Buffer = Buffer.alloc(8);
-  private offset = 0;
   private stats?: Stats;
 
-  constructor(private readonly handle: fs.FileHandle) {}
+  constructor(
+    private readonly handle: fs.FileHandle,
+    private offset = 0,
+    private maxOffset?: number
+  ) {}
+
+  getSubreader(length: number): Reader {
+    return new FileReader(this.handle, this.offset, this.offset + length);
+  }
 
   async readBuffer(length: number): Promise<Buffer> {
     const buffer = Buffer.alloc(length);
@@ -96,16 +126,24 @@ export class FileReader implements Reader {
     this.offset += increment;
   }
 
-  async canRead(maxOffset?: number) {
+  async canRead() {
+    if (this.maxOffset) {
+      return this.offset < this.maxOffset;
+    }
     if (!this.stats) {
       this.stats = await this.handle.stat();
     }
-    return this.offset < (maxOffset || this.stats.size);
+    return this.offset < this.stats.size;
   }
 
-  async readString(length: number, offset?: number) {
-    await this.read(length, offset);
+  async readAsciiString(length: number) {
+    await this.read(length);
     return this.buffer.toString("ascii", 0, length);
+  }
+
+  async readUtf8String(length: number) {
+    await this.read(length);
+    return this.buffer.toString("utf-8", 0, length);
   }
 
   async read1() {
@@ -134,13 +172,11 @@ export class FileReader implements Reader {
       : this.buffer.readBigUInt64LE();
   }
 
-  private async read(bytes: number, offset?: number): Promise<void> {
+  private async read(bytes: number): Promise<void> {
     if (this.buffer.length < bytes) {
       this.buffer = Buffer.alloc(bytes);
     }
-    await this.handle.read(this.buffer, 0, bytes, offset || this.offset);
-    if (offset === undefined) {
-      this.offset += bytes;
-    }
+    await this.handle.read(this.buffer, 0, bytes, this.offset);
+    this.offset += bytes;
   }
 }
