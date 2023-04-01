@@ -3,7 +3,14 @@
   "version": "0.0.0",
   "description": "Efficient metadata image/video metadata reader.",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jest"
+  },
   "author": "Constantin Titarenko",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "ts-jest": "^29.0.5",
+    "typescript": "^5.0.3"
+  }
 }
