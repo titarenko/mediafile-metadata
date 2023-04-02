@@ -15,7 +15,7 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
     return result;
   }
   reader.incrementOffset(4);
-  const time = await reader.read4();
+  const time = await reader.readUnsignedInteger(4);
   result = {
     creationDate: new Date((time - 2082844800) * 1000),
   };
@@ -31,14 +31,14 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
     return result;
   }
   reader.incrementOffset(4);
-  let keysCount = await reader.read4();
+  let keysCount = await reader.readUnsignedInteger(4);
   const keys: Record<number, string> = {};
   for (let keyIndex = 0; keyIndex < keysCount; ++keyIndex) {
     const canRead = await reader.canRead();
     if (!canRead) {
       break;
     }
-    const size = await reader.read4();
+    const size = await reader.readUnsignedInteger(4);
     reader.incrementOffset(4); // namespace is string of length 4
     const value = await reader.readAsciiString(size);
     if (
@@ -58,21 +58,21 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
     return result;
   }
   const values: Record<string, string> = {};
-  const ilstReader = reader.getSubreader(box.size);
+  const ilstReader = await reader.getSubreader(box.size);
   reader.incrementOffset(box.size);
   while (true) {
     const canRead = await ilstReader.canRead();
     if (!canRead) {
       break;
     }
-    const size = await ilstReader.read4();
-    const index = (await ilstReader.read4()) - 1;
+    const size = await ilstReader.readUnsignedInteger(4);
+    const index = (await ilstReader.readUnsignedInteger(4)) - 1;
     if (keys[index]) {
       box = await scrollTo(reader, "data");
       if (!box) {
         break;
       }
-      const type = await ilstReader.read4();
+      const type = await ilstReader.readUnsignedInteger(4);
       ilstReader.incrementOffset(4); // locale is 4 bytes number
       const value = await ilstReader.readBuffer(8);
       if (type !== 1) {

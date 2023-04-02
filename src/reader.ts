@@ -3,17 +3,17 @@ import fs from "fs/promises";
 
 export interface Reader {
   isBigEndian: boolean;
+
   canRead(): Promise<boolean>;
   getOffset(): number;
-  getSubreader(length: number): Reader;
-  incrementOffset(increment: number): void;
-  readAsciiString(length: number): Promise<string>;
-  readUtf8String(length: number): Promise<string>;
-  readBuffer(length: number): Promise<Buffer>;
-  read1(): Promise<number>;
-  read2(): Promise<number>;
-  read4(): Promise<number>;
-  read8(): Promise<BigInt>;
+  incrementOffset(lengthInBytes: number): void;
+
+  getSubreader(lengthInBytes: number): Promise<Reader>;
+
+  readUnsignedInteger(lengthInBytes: number): Promise<number>;
+  readAsciiString(lengthInBytes: number): Promise<string>;
+  readUtf8String(lengthInBytes: number): Promise<string>;
+  readBuffer(lengthInBytes: number): Promise<Buffer>;
 }
 
 export class BufferReader implements Reader {
@@ -25,7 +25,7 @@ export class BufferReader implements Reader {
     private maxOffset?: number
   ) {}
 
-  getSubreader(length: number): Reader {
+  async getSubreader(length: number): Promise<Reader> {
     return new BufferReader(this.buffer, this.offset, this.offset + length);
   }
 
@@ -65,34 +65,31 @@ export class BufferReader implements Reader {
     return result;
   }
 
-  async read1() {
-    const result = this.buffer.readUInt8();
-    this.offset += 1;
-    return result;
-  }
-
-  async read2() {
-    const result = this.isBigEndian
-      ? this.buffer.readUInt16BE()
-      : this.buffer.readUInt16LE();
-    this.offset += 2;
-    return result;
-  }
-
-  async read4() {
-    const result = this.isBigEndian
-      ? this.buffer.readUInt32BE()
-      : this.buffer.readUInt32LE();
-    this.offset += 4;
-    return result;
-  }
-
-  async read8() {
-    const result = this.isBigEndian
-      ? this.buffer.readBigUInt64BE()
-      : this.buffer.readBigUInt64LE();
-    this.offset += 8;
-    return result;
+  async readUnsignedInteger(length: number) {
+    if (length === 1) {
+      const result = this.buffer.readUInt8(this.offset);
+      this.offset += 1;
+      return result;
+    } else if (length === 2) {
+      const result = this.isBigEndian
+        ? this.buffer.readUInt16BE(this.offset)
+        : this.buffer.readUInt16LE(this.offset);
+      this.offset += 2;
+      return result;
+    } else if (length === 4) {
+      const result = this.isBigEndian
+        ? this.buffer.readUInt32BE(this.offset)
+        : this.buffer.readUInt32LE(this.offset);
+      this.offset += 4;
+      return result;
+    } else if (length === 8) {
+      const result = this.isBigEndian
+        ? Number(this.buffer.readBigUInt64BE())
+        : Number(this.buffer.readBigUInt64LE());
+      this.offset += 8;
+      return result;
+    }
+    throw new Error(`unsupported number length: ${length}`);
   }
 }
 
@@ -108,7 +105,11 @@ export class FileReader implements Reader {
     private maxOffset?: number
   ) {}
 
-  getSubreader(length: number): Reader {
+  async getSubreader(length: number): Promise<Reader> {
+    if (length <= 16 * 1024) {
+      const buffer = await this.readBuffer(length);
+      return new BufferReader(buffer);
+    }
     return new FileReader(this.handle, this.offset, this.offset + length);
   }
 
@@ -146,30 +147,27 @@ export class FileReader implements Reader {
     return this.buffer.toString("utf-8", 0, length);
   }
 
-  async read1() {
-    await this.read(1);
-    return this.buffer.readUInt8();
-  }
-
-  async read2() {
-    await this.read(2);
-    return this.isBigEndian
-      ? this.buffer.readUInt16BE()
-      : this.buffer.readUInt16LE();
-  }
-
-  async read4() {
-    await this.read(4);
-    return this.isBigEndian
-      ? this.buffer.readUInt32BE()
-      : this.buffer.readUInt32LE();
-  }
-
-  async read8() {
-    await this.read(8);
-    return this.isBigEndian
-      ? this.buffer.readBigUInt64BE()
-      : this.buffer.readBigUInt64LE();
+  async readUnsignedInteger(length: number) {
+    if (length === 1) {
+      await this.read(1);
+      return this.buffer.readUInt8();
+    } else if (length === 2) {
+      await this.read(2);
+      return this.isBigEndian
+        ? this.buffer.readUInt16BE()
+        : this.buffer.readUInt16LE();
+    } else if (length === 4) {
+      await this.read(4);
+      return this.isBigEndian
+        ? this.buffer.readUInt32BE()
+        : this.buffer.readUInt32LE();
+    } else if (length === 8) {
+      await this.read(8);
+      return this.isBigEndian
+        ? Number(this.buffer.readBigUInt64BE())
+        : Number(this.buffer.readBigUInt64LE());
+    }
+    throw new Error(`unsupported number length: ${length}`);
   }
 
   private async read(bytes: number): Promise<void> {

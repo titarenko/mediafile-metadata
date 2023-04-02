@@ -6,7 +6,7 @@ import { parse as parseHeic } from "./heic";
 export async function parseEssentials(
   reader: Reader
 ): Promise<Essentials | undefined> {
-  const size = await reader.read4();
+  const size = await reader.readUnsignedInteger(4);
   const type = await reader.readAsciiString(4);
   if (type !== "ftyp") {
     return;
