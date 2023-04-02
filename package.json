@@ -1,7 +1,7 @@
 {
   "name": "mediafile-metadata",
   "version": "0.0.0",
-  "description": "Efficient metadata image/video metadata reader.",
+  "description": "Efficient image/video metadata reader.",
   "main": "index.js",
   "scripts": {
     "test": "jest"
