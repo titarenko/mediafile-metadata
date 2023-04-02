@@ -6,6 +6,7 @@ export interface Reader {
 
   canRead(): Promise<boolean>;
   getOffset(): number;
+  setOffset(offsetInBytes: number): void;
   incrementOffset(lengthInBytes: number): void;
 
   getSubreader(lengthInBytes: number): Promise<Reader>;
@@ -24,6 +25,13 @@ export class BufferReader implements Reader {
     private offset = 0,
     private maxOffset?: number
   ) {}
+
+  setOffset(offsetInBytes: number): void {
+    if (this.offset >= this.buffer.length) {
+      throw new Error("offset is out of range");
+    }
+    this.offset = offsetInBytes;
+  }
 
   async getSubreader(length: number): Promise<Reader> {
     return new BufferReader(this.buffer, this.offset, this.offset + length);
@@ -121,6 +129,13 @@ export class FileReader implements Reader {
 
   getOffset(): number {
     return this.offset;
+  }
+
+  setOffset(offsetInBytes: number): void {
+    if (this.stats && offsetInBytes >= this.stats.size) {
+      throw new Error("offset is out of range");
+    }
+    this.offset = offsetInBytes;
   }
 
   incrementOffset(increment: number): void {
