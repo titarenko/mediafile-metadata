@@ -21,5 +21,6 @@ function t(testName: string, expectedResult: Essentials | undefined) {
     const reader = new FileReader(file);
     const essentials = await parseEssentials(reader);
     expect(essentials).toStrictEqual(expectedResult);
+    await file.close();
   });
 }
