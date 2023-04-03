@@ -10,6 +10,7 @@ export async function parse(reader: Reader) {
   if (!box) {
     return result;
   }
+  reader.incrementOffset(4); // meta is fullbox
 
   box = await scrollTo(reader, "iinf");
   if (!box) {
@@ -40,7 +41,8 @@ export async function parse(reader: Reader) {
 }
 
 async function readExifInfe(reader: Reader) {
-  reader.incrementOffset(8); // iinf is full box (1 + 3) + items count (4)
+  const version = await reader.readUnsignedInteger(1);
+  reader.incrementOffset(3 + (version === 0 ? 2 : 4)); // flags + items count
   while (true) {
     const canRead = await reader.canRead();
     if (!canRead) {
