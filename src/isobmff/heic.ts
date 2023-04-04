@@ -108,7 +108,9 @@ async function readExifIloc(reader: Reader, exifItemId: number) {
       reader.incrementOffset(2); // ignore constructionMethod
     }
     reader.incrementOffset(2); // ignore dataReferenceIndex
-    const baseOffset = await reader.readUnsignedInteger(baseOffsetSize);
+    const baseOffset = baseOffsetSize
+      ? await reader.readUnsignedInteger(baseOffsetSize)
+      : 0;
     let extentCount = await reader.readUnsignedInteger(2);
     if (itemId !== exifItemId) {
       const extentIndexSize =
