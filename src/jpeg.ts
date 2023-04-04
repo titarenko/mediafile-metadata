@@ -1,6 +1,6 @@
-import { Essentials } from "../essentials";
-import { Reader } from "../reader";
-import { parseEssentials as parseEssentialsFromExif } from "../exif";
+import { Essentials } from "./essentials";
+import { Reader } from "./reader";
+import { parseEssentials as parseEssentialsFromExif } from "./exif";
 
 export async function parseEssentials(
   reader: Reader
