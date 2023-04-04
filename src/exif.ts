@@ -56,7 +56,6 @@ class Parser {
   }
 
   private parseHeader() {
-    this.offset += 4; // app1 data size
     let exifString = this.readString(4);
     if (exifString !== "Exif") {
       throw new Error("Exif string is expected but not found");
@@ -67,7 +66,7 @@ class Parser {
       throw new Error("unexpected byte order");
     }
     this.isBigEndian = byteOrder === "MM";
-    this.offset += 2; // 0x0000 after MM or II
+    this.offset += 2; // 0x002a after MM or II
     const ifdOffset = this.read4() - 8; // minus tiff header length
     this.offset += ifdOffset;
   }
@@ -82,7 +81,7 @@ class Parser {
       }
       const dataFormat = this.read2();
       const numberOfComponents = this.read4();
-      const dataOffset = this.read4() + 10; // 10 is for exif header (4 + 4 + 2)
+      const dataOffset = this.read4() + 6; // 6 is for exif header (4 + 2)
       const entry = this.readEntry(
         tag,
         dataFormat,
@@ -96,7 +95,7 @@ class Parser {
       // no link, that's it
       return;
     }
-    this.offset += offsetToNextIfd;
+    this.offset = offsetToNextIfd + 6; // 6 is for exif header (4 + 2)
     this.parseIfd();
   }
 

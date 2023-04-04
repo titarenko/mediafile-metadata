@@ -34,8 +34,8 @@ export async function parse(reader: Reader) {
     return result;
   }
 
-  reader.setOffset(exifIloc.offset);
-  const exifBuffer = await reader.readBuffer(exifIloc.length);
+  reader.setOffset(exifIloc.offset + 4);
+  const exifBuffer = await reader.readBuffer(exifIloc.length - 4);
 
   return parseEssentials(exifBuffer);
 }
