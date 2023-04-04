@@ -2,6 +2,7 @@ import { describe, expect, test } from "@jest/globals";
 import fs from "fs/promises";
 import { parseEssentials } from "../src/exif";
 import { Essentials } from "../src/essentials";
+import { BufferReader } from "../src/reader";
 
 describe("exif", () => {
   createTest("should work", "exif.bin", {
@@ -22,7 +23,7 @@ function createTest(
 ) {
   test(testName, async () => {
     const data = await fs.readFile(`${__dirname}/assets/${fileName}`);
-    const actualResult = parseEssentials(data);
+    const actualResult = await parseEssentials(new BufferReader(data));
     expect(actualResult).toStrictEqual(expectedResult);
   });
 }

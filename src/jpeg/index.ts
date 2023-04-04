@@ -18,8 +18,8 @@ export async function parseEssentials(
     const marker = await reader.readUnsignedInteger(2);
     const size = (await reader.readUnsignedInteger(2)) - 2;
     if (marker === 0xffe1) {
-      const buffer = await reader.readBuffer(size);
-      return parseEssentialsFromExif(buffer);
+      const subreader = await reader.getSubreader(size);
+      return parseEssentialsFromExif(subreader);
     } else {
       reader.incrementOffset(size);
     }

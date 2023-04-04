@@ -1,32 +1,15 @@
 import { Essentials } from "./essentials";
+import { Reader } from "./reader";
 import { parseEssentials as parseEssentialsFromTiff } from "./tiff";
 
-class Parser {
-  constructor(private readonly data: Buffer, private offset = 0) {}
-
-  parse(): Essentials | undefined {
-    let exifString = this.readString(4);
-    if (exifString !== "Exif") {
-      throw new Error("Exif string is expected but not found");
-    }
-    this.offset += 2; // 0x0000 after Exif
-
-    const tiffBuffer = this.data.subarray(this.offset);
-    return parseEssentialsFromTiff(tiffBuffer);
+export async function parseEssentials(
+  reader: Reader
+): Promise<Essentials | undefined> {
+  const exifString = await reader.readAsciiString(4);
+  if (exifString !== "Exif") {
+    throw new Error("Exif string is expected but not found");
   }
-
-  private readString(length: number) {
-    const result = this.data.toString(
-      "ascii",
-      this.offset,
-      this.offset + length
-    );
-    this.offset += length;
-    return result;
-  }
-}
-
-export function parseEssentials(data: Buffer): Essentials | undefined {
-  const parser = new Parser(data);
-  return parser.parse();
+  reader.incrementOffset(2); // 0x0000 after Exif
+  const subreader = await reader.getSubreader();
+  return parseEssentialsFromTiff(subreader);
 }

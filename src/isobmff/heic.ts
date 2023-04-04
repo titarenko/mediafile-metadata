@@ -35,9 +35,9 @@ export async function parse(reader: Reader) {
   }
 
   reader.setOffset(exifIloc.offset + 4);
-  const exifBuffer = await reader.readBuffer(exifIloc.length - 4);
+  const subreader = await reader.getSubreader(exifIloc.length - 4);
 
-  return parseEssentials(exifBuffer);
+  return parseEssentials(subreader);
 }
 
 async function readExifInfe(reader: Reader) {

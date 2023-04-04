@@ -9,7 +9,7 @@ export interface Reader {
   setOffset(offsetInBytes: number): void;
   incrementOffset(lengthInBytes: number): void;
 
-  getSubreader(lengthInBytes: number): Promise<Reader>;
+  getSubreader(lengthInBytes?: number): Promise<Reader>;
 
   readUnsignedInteger(lengthInBytes: number): Promise<number>;
   readAsciiString(lengthInBytes: number): Promise<string>;
@@ -19,22 +19,30 @@ export interface Reader {
 
 export class BufferReader implements Reader {
   public isBigEndian = true;
+  private readonly minOffset: number;
 
   constructor(
     private readonly buffer: Buffer,
     private offset = 0,
     private maxOffset?: number
-  ) {}
+  ) {
+    this.minOffset = offset;
+  }
 
   setOffset(offsetInBytes: number): void {
+    offsetInBytes += this.minOffset;
     if (this.offset >= this.buffer.length) {
       throw new Error("offset is out of range");
     }
     this.offset = offsetInBytes;
   }
 
-  async getSubreader(length: number): Promise<Reader> {
-    return new BufferReader(this.buffer, this.offset, this.offset + length);
+  async getSubreader(length?: number): Promise<Reader> {
+    return new BufferReader(
+      this.buffer,
+      this.offset,
+      length === undefined ? undefined : this.offset + length
+    );
   }
 
   async readUtf8String(length: number): Promise<string> {
@@ -52,7 +60,7 @@ export class BufferReader implements Reader {
   }
 
   getOffset(): number {
-    return this.offset;
+    return this.offset - this.minOffset;
   }
 
   incrementOffset(increment: number): void {
@@ -105,15 +113,21 @@ export class FileReader implements Reader {
   public isBigEndian = true;
 
   private buffer: Buffer = Buffer.alloc(8);
+  private readonly minOffset: number;
   private stats?: Stats;
 
   constructor(
     private readonly handle: fs.FileHandle,
     private offset = 0,
-    private maxOffset?: number
-  ) {}
+    private readonly maxOffset?: number
+  ) {
+    this.minOffset = offset;
+  }
 
-  async getSubreader(length: number): Promise<Reader> {
+  async getSubreader(length?: number): Promise<Reader> {
+    if (length === undefined) {
+      return new FileReader(this.handle, this.offset);
+    }
     if (length <= 16 * 1024) {
       const buffer = await this.readBuffer(length);
       return new BufferReader(buffer);
@@ -128,10 +142,11 @@ export class FileReader implements Reader {
   }
 
   getOffset(): number {
-    return this.offset;
+    return this.offset - this.minOffset;
   }
 
   setOffset(offsetInBytes: number): void {
+    offsetInBytes += this.minOffset;
     if (this.stats && offsetInBytes >= this.stats.size) {
       throw new Error("offset is out of range");
     }
