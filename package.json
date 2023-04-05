@@ -1,10 +1,15 @@
 {
   "name": "mediafile-metadata",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Efficient image/video metadata reader.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "test": "jest --coverage",
+    "coveralls": "coveralls < coverage/lcov.info",
+    "release-major": "npm t && tsc && npm version major && npm publish && git push",
+    "release-minor": "npm t && tsc && npm version minor && npm publish && git push",
+    "release-patch": "npm t && tsc && npm version patch && npm publish && git push"
   },
   "author": "Constantin Titarenko",
   "license": "MIT",
@@ -12,5 +17,36 @@
     "jest": "^29.5.0",
     "ts-jest": "^29.0.5",
     "typescript": "^5.0.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/titarenko/mediafile-metadata.git"
+  },
+  "bugs": {
+    "url": "https://github.com/titarenko/mediafile-metadata/issues"
+  },
+  "homepage": "https://github.com/titarenko/mediafile-metadata#readme",
+  "keywords": [
+    "fast",
+    "exif",
+    "metadata",
+    "reader",
+    "media",
+    "mediafile",
+    "image",
+    "photo",
+    "video",
+    "jpeg",
+    "jpg",
+    "tiff",
+    "nef",
+    "cr2",
+    "isobmff",
+    "isom",
+    "heic",
+    "heif",
+    "mov",
+    "mp4",
+    "qt"
+  ]
 }
