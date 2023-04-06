@@ -5,6 +5,8 @@ import { parseEssentials as parseEssentialsFromTiff } from "./tiff";
 import { parseEssentials as parseEssentialsFromIsobmff } from "./isobmff";
 import { parseEssentials as parseEssentialsFromExif } from "./exif";
 
+export { Essentials } from "./essentials";
+
 export async function getEssentials(filePath: string) {
   let file;
   try {
