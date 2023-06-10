@@ -56,7 +56,9 @@ export class BufferReader implements Reader {
   }
 
   async readBuffer(length: number): Promise<Buffer> {
-    return this.buffer.subarray(this.offset, this.offset + length);
+    const result = this.buffer.subarray(this.offset, this.offset + length);
+    this.offset += length;
+    return result;
   }
 
   getOffset(): number {
@@ -129,7 +131,8 @@ export class FileReader implements Reader {
       return new FileReader(this.handle, this.offset);
     }
     if (length <= 16 * 1024) {
-      const buffer = await this.readBuffer(length);
+      const buffer = Buffer.alloc(length);
+      await this.handle.read(buffer, 0, length, this.offset);
       return new BufferReader(buffer);
     }
     return new FileReader(this.handle, this.offset, this.offset + length);
@@ -138,6 +141,7 @@ export class FileReader implements Reader {
   async readBuffer(length: number): Promise<Buffer> {
     const buffer = Buffer.alloc(length);
     await this.handle.read(buffer, 0, length, this.offset);
+    this.offset += length;
     return buffer;
   }
 

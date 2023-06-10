@@ -17,10 +17,12 @@ export async function parseEssentials(
 
   switch (brand) {
     case "isom":
+    case "qt  ":
+    case "mp42":
       return parseIsom(reader);
     case "heic":
       return parseHeic(reader);
     default:
-      throw new Error(`unexpected brand: ${brand}`);
+      throw new Error(`unexpected brand: "${brand}"`);
   }
 }

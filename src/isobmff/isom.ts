@@ -26,11 +26,12 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
     return result;
   }
 
+  // https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/Metadata/Metadata.html#//apple_ref/doc/uid/TP40000939-CH1-SW1
   box = await scrollTo(reader, "keys");
   if (!box) {
     return result;
   }
-  reader.incrementOffset(4);
+  reader.incrementOffset(4); // version + flags (1 + 3)
   let keysCount = await reader.readUnsignedInteger(4);
   const keys: Record<number, string> = {};
   for (let keyIndex = 0; keyIndex < keysCount; ++keyIndex) {
@@ -40,7 +41,7 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
     }
     const size = await reader.readUnsignedInteger(4);
     reader.incrementOffset(4); // namespace is string of length 4
-    const value = await reader.readAsciiString(size);
+    const value = await reader.readAsciiString(size - 8);
     if (
       value === "com.android.version" ||
       value === "com.apple.quicktime.make" ||
@@ -59,7 +60,6 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
   }
   const values: Record<string, string> = {};
   const ilstReader = await reader.getSubreader(box.size);
-  reader.incrementOffset(box.size);
   while (true) {
     const canRead = await ilstReader.canRead();
     if (!canRead) {
@@ -68,16 +68,16 @@ export async function parse(reader: Reader): Promise<Essentials | undefined> {
     const size = await ilstReader.readUnsignedInteger(4);
     const index = (await ilstReader.readUnsignedInteger(4)) - 1;
     if (keys[index]) {
-      box = await scrollTo(reader, "data");
+      box = await scrollTo(ilstReader, "data");
       if (!box) {
         break;
       }
       const type = await ilstReader.readUnsignedInteger(4);
-      ilstReader.incrementOffset(4); // locale is 4 bytes number
-      const value = await ilstReader.readBuffer(8);
       if (type !== 1) {
         throw new Error(`unexpected type: ${type}`);
       }
+      ilstReader.incrementOffset(4); // locale is 4 bytes number
+      const value = await ilstReader.readBuffer(box.size - 8);
       values[keys[index]] = value.toString("utf-8");
     } else {
       ilstReader.incrementOffset(size - 4); // index field is 4 bytes

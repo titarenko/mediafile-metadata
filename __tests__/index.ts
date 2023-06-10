@@ -16,6 +16,16 @@ describe("mediafile-metadata", () => {
     creationDate: new Date("2017-05-06T15:24:07.000Z"),
     camera: "NIKON CORPORATION NIKON D700",
   });
+
+  createTest("qt", {
+    creationDate: new Date("2019-10-19T08:49:01.000Z"),
+    camera: "Apple iPhone XS",
+  });
+
+  createTest("mp42", {
+    creationDate: new Date("2020-11-16T19:03:31.000Z"),
+    camera: "Android 9",
+  });
 });
 
 export function createTest(
