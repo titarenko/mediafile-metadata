@@ -1,6 +1,6 @@
 {
   "name": "mediafile-metadata",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Efficient image/video metadata reader.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
