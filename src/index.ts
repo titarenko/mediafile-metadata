@@ -8,13 +8,27 @@ import { parseEssentials as parseEssentialsFromExif } from "./exif";
 export { Essentials } from "./essentials";
 
 export async function getEssentials(filePath: string) {
+  const { essentials } = await getEssentialsAndHeader(filePath);
+  return essentials;
+}
+
+export async function getEssentialsAndHeader(
+  filePath: string,
+  headerLength = 8
+) {
   let file;
   try {
     file = await fs.open(filePath);
     const reader = new FileReader(file);
-    const parser = await guessParser(reader);
+    const header = new BufferReader(await reader.readBuffer(headerLength));
+    const parser = await guessParser(header);
     reader.setOffset(0);
-    return parser ? await parser(reader) : undefined;
+    const essentials = parser ? await parser(reader) : undefined;
+    header.setOffset(0);
+    return {
+      essentials,
+      header: (await header.readBuffer(headerLength)).toString("hex"),
+    };
   } finally {
     if (file) {
       await file.close();
@@ -22,9 +36,7 @@ export async function getEssentials(filePath: string) {
   }
 }
 
-async function guessParser(reader: Reader) {
-  const header = new BufferReader(await reader.readBuffer(8));
-
+async function guessParser(header: BufferReader) {
   let n = await header.readUnsignedInteger(2);
   if (n === 0xffd8) {
     return parseEssentialsFromJpeg;

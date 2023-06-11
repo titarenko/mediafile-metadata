@@ -31,7 +31,7 @@ export class BufferReader implements Reader {
 
   setOffset(offsetInBytes: number): void {
     offsetInBytes += this.minOffset;
-    if (this.offset >= this.buffer.length) {
+    if (offsetInBytes >= this.buffer.length) {
       throw new Error("offset is out of range");
     }
     this.offset = offsetInBytes;

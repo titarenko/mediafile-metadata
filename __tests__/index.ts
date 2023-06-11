@@ -1,6 +1,6 @@
 import { describe, expect, test } from "@jest/globals";
 import { Essentials } from "../src/essentials";
-import { getEssentials } from "../src";
+import { getEssentials, getEssentialsAndHeader } from "../src";
 
 describe("mediafile-metadata", () => {
   createTest("isom", {
@@ -25,6 +25,18 @@ describe("mediafile-metadata", () => {
   createTest("mp42", {
     creationDate: new Date("2020-11-16T19:03:31.000Z"),
     camera: "Android 9",
+  });
+
+  createTest("unknown", undefined);
+
+  test("header", async () => {
+    const actualResult = await getEssentialsAndHeader(
+      `${__dirname}/assets/unknown.bin`
+    );
+    expect(actualResult).toStrictEqual({
+      essentials: undefined,
+      header: "123456789abcdef0",
+    });
   });
 });
 
