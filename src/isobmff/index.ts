@@ -19,6 +19,7 @@ export async function parseEssentials(
     case "isom":
     case "qt  ":
     case "mp42":
+    case "XAVC":
       return parseIsom(reader);
     case "heic":
       return parseHeic(reader);
