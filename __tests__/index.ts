@@ -27,6 +27,11 @@ describe("mediafile-metadata", () => {
     camera: "Android 9",
   });
 
+  createTest("xavc", {
+    creationDate: new Date("2023-06-15T14:05:42+03:00"),
+    camera: "Sony FDR-X3000",
+  });
+
   createTest("unknown", undefined);
 
   test("header", async () => {

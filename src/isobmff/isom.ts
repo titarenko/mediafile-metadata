@@ -1,27 +1,17 @@
 import { Essentials } from "../essentials";
 import { Reader } from "../reader";
+import { readCreationDate } from "./common/mvhd";
 import { scrollTo } from "./utils";
 
 export async function parse(reader: Reader): Promise<Essentials | undefined> {
   let result: Essentials | undefined;
 
-  let box = await scrollTo(reader, "moov");
-  if (!box) {
+  result = await readCreationDate(reader);
+  if (!result) {
     return result;
   }
 
-  box = await scrollTo(reader, "mvhd");
-  if (!box) {
-    return result;
-  }
-  reader.incrementOffset(4);
-  const time = await reader.readUnsignedInteger(4);
-  result = {
-    creationDate: new Date((time - 2082844800) * 1000),
-  };
-  reader.incrementOffset(box.size - 8);
-
-  box = await scrollTo(reader, "meta");
+  let box = await scrollTo(reader, "meta");
   if (!box) {
     return result;
   }

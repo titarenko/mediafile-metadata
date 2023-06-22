@@ -1,6 +1,7 @@
 import { Essentials } from "../essentials";
 import { Reader } from "../reader";
 import { parse as parseIsom } from "./isom";
+import { parse as parseXavc } from "./xavc";
 import { parse as parseHeic } from "./heic";
 
 export async function parseEssentials(
@@ -19,8 +20,9 @@ export async function parseEssentials(
     case "isom":
     case "qt  ":
     case "mp42":
-    case "XAVC":
       return parseIsom(reader);
+    case "XAVC":
+      return parseXavc(reader);
     case "heic":
       return parseHeic(reader);
     default:
